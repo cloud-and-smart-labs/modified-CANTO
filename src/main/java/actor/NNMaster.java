@@ -99,7 +99,7 @@ public class NNMaster extends AbstractActor {
 			}
 
 			System.out.println("Creating PS shard actor for between " + i + " and " + (i+1));
-			psRefs.add(getContext().actorOf(Props.create(ParameterServerShard.class, i, nnmsg.getLearningRate(), Matrix.from2DArray(weightMat)), "ps" + i));
+			psRefs.add(getContext().actorOf(Props.create(ParameterServerShard.class, i, nnmsg.getLearningRate(), Matrix.from2DArray(weightMat), nnmsg.getDataset().size()/nnmsg.getDataPerReplica()), "ps" + i));
 		}
 		
 		// Send dataset part, psRefs, activation to each routee
