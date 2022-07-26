@@ -1,0 +1,8 @@
+.history
+.vscode
+notes.md
+.idea
+target/
+Dockerfile
+docker-compose.yml
+deploy.sh
