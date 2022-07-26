@@ -12,9 +12,10 @@ import org.neuroph.core.transfer.TransferFunction;
 import akka.actor.ActorRef;
 
 public interface NNOperationTypes {
-	class ParameterResponse implements NNOperationTypes, Serializable { }
-	class ParameterRequest implements NNOperationTypes, Serializable {
-	}
+	class ParameterResponse implements NNOperationTypes, Serializable {}
+	class ParameterRequest implements NNOperationTypes, Serializable {}
+
+	class DoneEpoch implements NNOperationTypes, Serializable {}
 
 	class UpdateWeightParam implements NNOperationTypes, Serializable {
 		public Matrix param1;

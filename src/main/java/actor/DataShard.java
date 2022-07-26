@@ -47,6 +47,8 @@ public class DataShard extends AbstractActor {
 	public int routee_num;
 	public ArrayList<Integer> layerDimensions;
 	private Basic2DMatrix lambda;
+	private Basic2DMatrix input;
+	private Basic2DMatrix labels;
 
 	public DataShard() {
 		master = getContext().actorSelection("akka://MasterSystem@127.0.0.1:2550/user/master");
@@ -64,6 +66,7 @@ public class DataShard extends AbstractActor {
 				.match(NNOperationTypes.Predict.class, this::prediction)
 				.match(NNOperationTypes.WeightUpdate.class, this::fetchWeights)
 				.match(NNOperationTypes.DoneUpdatingWeights.class, this::startTraining)
+				.match(NNOperationTypes.DoneEpoch.class, this::startADMMTraining)
 				.match(NNOperationTypes.DataShardParams.class, this::setParameters)
 				.match(String.class, this::successMsg)
 				.matchAny(this::handleAny)
@@ -90,6 +93,17 @@ public class DataShard extends AbstractActor {
 		this.routee_num = dsParams.routee_num;
 		this.layerDimensions = dsParams.layerDimensions;
 		this.lambda = Basic2DMatrix.unit(lastLayerNeurons, dataSetPart.size());
+		
+		// Build input and labels
+		for(DataSetRow row: dataSetPart) {
+			Vector x = Vector.fromArray(row.getInput());
+			Vector y = Vector.fromArray(row.getDesiredOutput());
+			y = NNOperations.oneHotEncoding(y, lastLayerNeurons);
+			System.out.println("Data point: " + x + ", output: " + y);
+			this.input.insertRow(0, x);
+			this.labels.insertRow(0, y);
+		}
+
 		dsIter = dataSetPart.iterator();
 		createLayerActors();		
 	}
@@ -106,14 +120,14 @@ public class DataShard extends AbstractActor {
 		int n = this.parameterShardRefs.size();
 		layerRefs = new ArrayList<ActorRef>();
 		
-		layerRefs.add(getContext().actorOf(Props.create(NNLayer.class, 0, layerDimensions.get(0), dataSetPart.size(), activation, null, null, parameterShardRefs.get(0)), d_id + "layer0"));
+		layerRefs.add(getContext().actorOf(Props.create(NNLayer.class, 0, layerDimensions.get(0), dataSetPart.size(), activation, null, null, parameterShardRefs.get(0), null, null), d_id + "layer0"));
 	
 		for(int i = 1; i < n-1; i++) {
 			System.out.println("Layer: " + i);			
-			layerRefs.add(getContext().actorOf(Props.create(NNLayer.class, i, layerDimensions.get(i), dataSetPart.size(), activation, layerRefs.get(i-1), null, parameterShardRefs.get(i)), d_id + "layer" + i));
+			layerRefs.add(getContext().actorOf(Props.create(NNLayer.class, i, layerDimensions.get(i), dataSetPart.size(), activation, layerRefs.get(i-1), null, parameterShardRefs.get(i), null, null), d_id + "layer" + i));
 			//System.out.println("Layer " + i + " parent: " + layerRefs.get(i).path().parent());
 		}
-		layerRefs.add(getContext().actorOf(Props.create(NNLayer.class, n-1, layerDimensions.get(n-1), dataSetPart.size(), activation, layerRefs.get(n-2), null, parameterShardRefs.get(n-1)), d_id + "layer" + (n-1)));
+		layerRefs.add(getContext().actorOf(Props.create(NNLayer.class, n-1, layerDimensions.get(n-1), dataSetPart.size(), activation, layerRefs.get(n-2), null, parameterShardRefs.get(n-1), lambda, labels), d_id + "layer" + (n-1)));
 		
 		System.out.println("Linking the child actors");
 		for(int i = 0; i < n-1; i++) {
@@ -177,50 +191,9 @@ public class DataShard extends AbstractActor {
 		}
 	}
 
-	public void startADMMTraining() {
-		String nodeHost;
-		int l;
-		ActorRef layerRef;
-
-		if (this.epochCount++ < epochs) {
-			nodeHost = getContext().provider().getDefaultAddress().getHost().get();
-			for(int i=0; i < layerRefs.size()-1; i++) {
-				layerRef = layerRefs.get(i);
-				l=i+1;
-
-				// Table +1
-				master.tell(new WorkerRegionEvent.UpdateTable(nodeHost, 1), self());
-				
-				// Compute weight params
-				// layerRef.tell(new NNOperationTypes.UpdateWeightParam(activations??), getSelf());
-				// Update activations locally
-				
-				// Request weights only for the current layer
-				
-				// Update outputs
-
-				// layerRefs.get(0).tell(new NNOperationTypes.ForwardProp(x, NNOperations.oneHotEncoding(y, lastLayerNeurons), false), getSelf());
-
-				// // Request updated weights
-				// Future<Object> future = Patterns.ask(layerRef, new NNOperationTypes.ParameterRequest(), timeout);
-				// Object result = Await.result(future, timeout.duration());
-				// if(result.getClass() != NNOperationTypes.ParameterResponse.class) {
-				// 	System.out.println("Current weights could NOT be retrieved!");
-				// 	return;
-				// }
-
-				// Table -1
-				master.tell(new WorkerRegionEvent.UpdateTable(nodeHost, -1), self());
-				l++;
-			} 
-			// Compute last layer weight params
-			// Update last layer weights
-			// Request last layer weights
-			// Update last layer outputs     [In classification tasks?]
-			// Update last layer activations [necessary step?]
-			// Update lambda
-			getSelf().tell(new NNOperationTypes.DoneUpdatingWeights(), getSelf());
-			
+	public void startADMMTraining(NNOperationTypes.DoneEpoch req) {
+		if (++this.epochCount <= epochs) {
+			layerRefs.get(0).tell(new NNOperationTypes.UpdateWeightParam(input), self());
 		}
 		else {
 			NNMaster.routeeReturns++;

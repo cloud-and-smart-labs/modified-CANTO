@@ -36,13 +36,13 @@ public class NNLayer extends AbstractActor {
 	private Basic2DMatrix layerWeights;
 	private Basic2DMatrix activations;
 	private Basic2DMatrix outputs;
-	private Basic2DMatrix param1;
-	private Basic2DMatrix param2;
+	private Basic2DMatrix lambda;
+	private Basic2DMatrix labels;
 	private Vector activatedInput;
 	private final ActorSelection master;
 
 	// ps_id required?
-	public NNLayer(int ps_id, int numberOfLayers, int numberofRows, TransferFunction activation, ActorRef parentRef, ActorRef childRef, ActorRef psShardRef) {
+	public NNLayer(int ps_id, int numberOfLayers, int numberofRows, TransferFunction activation, ActorRef parentRef, ActorRef childRef, ActorRef psShardRef, Basic2DMatrix lambda, Basic2DMatrix labels) {
 		this.ps_id = ps_id;
 		this.activation = activation;
 		this.parentRef = parentRef;
@@ -51,6 +51,8 @@ public class NNLayer extends AbstractActor {
 		this.activatedInput = null;
 		this.activations =Basic2DMatrix.random(numberOfLayers, numberofRows, new Random());
 		this.outputs =Basic2DMatrix.random(numberOfLayers, numberofRows, new Random());
+		this.lambda = lambda;
+		this.labels = labels;
 		master = getContext().actorSelection("akka://MasterSystem@127.0.0.1:2550/user/master");
 	}
 	
@@ -89,6 +91,11 @@ public class NNLayer extends AbstractActor {
 	}
 
 	public void updateWeightParam(NNOperationTypes.UpdateWeightParam req) throws TimeoutException, InterruptedException {
+		// Update table
+		String nodeHost;
+		nodeHost = getContext().provider().getDefaultAddress().getHost().get();
+		master.tell(new WorkerRegionEvent.UpdateTable(nodeHost, 1), self());
+
 		// Define hyperparameters
 		double gamma = 5.0;
 		double beta = 5.0;
@@ -103,19 +110,23 @@ public class NNLayer extends AbstractActor {
 		Future<Object> future = Patterns.ask(psShardRef, req, timeout);
 		layerWeights = (Basic2DMatrix) Await.result(future, timeout.duration());
 
+		// Handle Last layer seperately
 		if (childRef == null) {
 			// Update output of last layer
 			Matrix m = layerWeights.multiply(req.activations);
-			outputs = (Basic2DMatrix) m.multiply(beta).divide(beta+1);
-			// Update lambda??
+			outputs = (Basic2DMatrix) labels.add(m.multiply(beta).subtract(lambda)).divide(beta+1);
+			// Update lambda
+			lambda = (Basic2DMatrix) lambda.add(outputs.subtract(m).multiply(beta));
 			// Stop epoch
+			master.tell(new WorkerRegionEvent.UpdateTable(nodeHost, 1), self());
+			getContext().parent().tell(new NNOperationTypes.DoneEpoch(), self());
 		}
 
 		// Get weights and outputs of next layer
 		future = Patterns.ask(childRef, new NNOperationTypes.GetWeights(), timeout);
 		NNOperationTypes.GetWeights nextLayerParams = (NNOperationTypes.GetWeights) Await.result(future, timeout.duration());
-		Basic2DMatrix nextLayerWeights = (Basic2DMatrix) nextLayerParams.weights;
-		Basic2DMatrix nextLayerOutputs = (Basic2DMatrix) nextLayerParams.outputs;
+		Basic2DMatrix nextLayerWeights = nextLayerParams.weights;
+		Basic2DMatrix nextLayerOutputs = nextLayerParams.outputs;
 
 		// Update activations locally
 
@@ -134,7 +145,7 @@ public class NNLayer extends AbstractActor {
 		Matrix sol1 = activations.multiply(gamma).add(m.multiply(beta)).divide(gamma+beta);
 		Matrix sol2 = m;
 		Matrix z1 = sol1.transform(new NNOperations.PositiveElements());
-		Matrix z2 = sol1.transform(new NNOperations.NegativeElements());
+		Matrix z2 = sol2.transform(new NNOperations.NegativeElements());
 
 		Matrix fz1 = activations.subtract(z1.transform(new NNOperations.RELU())).multiply(gamma);
 		fz1 = fz1.add(z1.subtract(m).transform(new NNOperations.Square()).multiply(beta));
@@ -146,6 +157,9 @@ public class NNLayer extends AbstractActor {
 
 		outputs = (Basic2DMatrix) fz1.subtract(fz2).transform(new NNOperations.NegativeElements()).add(fz2);
 		
+		// Move to next layer
+		master.tell(new WorkerRegionEvent.UpdateTable(nodeHost, 1), self());
+		childRef.tell(new NNOperationTypes.UpdateWeightParam(activations), self());
 	}
 
 	public int getOuputIndex(Vector x) {
