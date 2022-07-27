@@ -221,7 +221,7 @@ public class DataShard extends AbstractActor {
 				master.tell(new NNOperationTypes.SendWeights(parameterShardRefs), self());
 			}
 			System.out.println("Routee returns so far: " + NNMaster.routeeReturns);
-			self().tell(new NNOperationTypes.Predict(), self());
+			self().tell(new NNOperationTypes.Predict("admm"), self());
 		}
 	}
 
@@ -235,7 +235,11 @@ public class DataShard extends AbstractActor {
 			Vector x = Vector.fromArray(test_row.getInput());
 			Vector y = Vector.fromArray(test_row.getDesiredOutput());
 			System.out.println("Test data point: " + x + ", output: " + y);
-			layerRefs.get(0).tell(new NNOperationTypes.ForwardProp(x, NNOperations.oneHotEncoding(y, lastLayerNeurons), true), getSelf());
+			
+			if (p.optimizer.equals("admm"))
+				layerRefs.get(0).tell(new NNOperationTypes.AdmmPredict(x, NNOperations.oneHotEncoding(y, lastLayerNeurons)), getSelf());
+			else
+				layerRefs.get(0).tell(new NNOperationTypes.ForwardProp(x, NNOperations.oneHotEncoding(y, lastLayerNeurons), true), getSelf());
 		}
 	}
 }

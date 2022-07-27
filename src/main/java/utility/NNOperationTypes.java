@@ -58,7 +58,26 @@ public interface NNOperationTypes {
 			this.isTestData = isTestData;
 		}
 	}
-	class Predict implements NNOperationTypes, Serializable {}
+
+	class AdmmPredict implements NNOperationTypes, Serializable {
+		public Vector input;
+		public Vector label;
+
+		public AdmmPredict(Vector input, Vector label) {
+			this.input = input;
+			this.label = label;
+		}
+	}
+
+	class Predict implements NNOperationTypes, Serializable {
+		public String optimizer;
+		public Predict(){
+			this.optimizer = "sgd";
+		}
+		public Predict(String optimizer){
+			this.optimizer = optimizer;
+		}
+	}
 	
 	class BackProp implements NNOperationTypes, Serializable {
 		public Vector childDelta;

@@ -68,6 +68,7 @@ public class NNLayer extends AbstractActor {
 				.match(NNOperationTypes.ParameterRequest.class, this::weightsRequest)
 				.match(NNOperationTypes.UpdateWeightParam.class, this::updateWeightParam)
 				.match(NNOperationTypes.GetWeights.class, this::getWeights)
+				.match(NNOperationTypes.AdmmPredict.class, this::admmPredict)
 				.match(NNOperationTypes.ForwardProp.class, this::forwardProp)
 				.match(NNOperationTypes.BackProp.class, this::backProp)
 			//	.match(String.class, this::updateWeights)
@@ -131,48 +132,83 @@ public class NNLayer extends AbstractActor {
 			master.tell(new WorkerRegionEvent.UpdateTable(nodeHost, 1), self());
 			getContext().parent().tell(new NNOperationTypes.DoneEpoch(), self());
 		}
+		else {
+			// Get weights and outputs of next layer
+			future = Patterns.ask(childRef, new NNOperationTypes.GetWeights(), timeout);
+			NNOperationTypes.GetWeights nextLayerParams = (NNOperationTypes.GetWeights) Await.result(future, timeout.duration());
+			Basic2DMatrix nextLayerWeights = (Basic2DMatrix) Matrix.fromCSV(nextLayerParams.weights);
+			Basic2DMatrix nextLayerOutputs = (Basic2DMatrix) Matrix.fromCSV(nextLayerParams.outputs);
+			
+			System.out.println("wl+1: " + nextLayerWeights.rows() + "*" + nextLayerWeights.columns());
+			System.out.println("zl+1: " + nextLayerOutputs.rows() + "*" + nextLayerOutputs.columns());
 
-		// Get weights and outputs of next layer
-		future = Patterns.ask(childRef, new NNOperationTypes.GetWeights(), timeout);
-		NNOperationTypes.GetWeights nextLayerParams = (NNOperationTypes.GetWeights) Await.result(future, timeout.duration());
-		Basic2DMatrix nextLayerWeights = (Basic2DMatrix) Matrix.fromCSV(nextLayerParams.weights);
-		Basic2DMatrix nextLayerOutputs = (Basic2DMatrix) Matrix.fromCSV(nextLayerParams.outputs);
+			// Update activations locally
+
+			Matrix m1 = nextLayerWeights.transpose().multiplyByItsTranspose().multiply(beta);
+			Matrix m2 = Matrix.identity(m1.rows()).multiply(beta);
+			Matrix av = m1.add(m2).withInverter(InverterFactory.SMART).inverse();
+			
+			Matrix m3 = nextLayerWeights.transpose().multiply(nextLayerOutputs).multiply(beta);
+			Matrix m4 = outputs.transform(new NNOperations.RELU()).multiply(beta);
+			Matrix af = m3.add(m4);
+			
+			activations = (Basic2DMatrix) av.multiply(af);
+
+			// Update outputs
+			Matrix m = layerWeights.multiply(previousActivations);
+			Matrix sol1 = activations.multiply(gamma).add(m.multiply(beta)).divide(gamma+beta);
+			Matrix sol2 = m;
+			Matrix z1 = sol1.transform(new NNOperations.PositiveElements());
+			Matrix z2 = sol2.transform(new NNOperations.NegativeElements());
+
+			Matrix fz1 = activations.subtract(z1.transform(new NNOperations.RELU())).multiply(gamma);
+			fz1 = fz1.add(z1.subtract(m).transform(new NNOperations.Square()).multiply(beta));
+			fz1 = fz1.transform(new NNOperations.Square());
+
+			Matrix fz2 = activations.subtract(z2.transform(new NNOperations.RELU())).multiply(gamma);
+			fz2 = fz2.add(z2.subtract(m).transform(new NNOperations.Square()).multiply(beta));
+			fz2 = fz2.transform(new NNOperations.Square());
+			
+			outputs = (Basic2DMatrix) fz1.subtract(fz2).transform(new NNOperations.NegativeElements()).add(fz2);
+			
+			// Move to next layer
+			master.tell(new WorkerRegionEvent.UpdateTable(nodeHost, 1), self());
+			childRef.tell(new NNOperationTypes.UpdateWeightParam(activations.toCSV()), self());
+		}
+	}
+
+	public void admmPredict(NNOperationTypes.AdmmPredict params) {
+		Vector input = params.input;
+		Vector label = params.label;
 		
-		System.out.println("wl+1: " + nextLayerWeights.rows() + "*" + nextLayerWeights.columns());
-		System.out.println("zl+1: " + nextLayerOutputs.rows() + "*" + nextLayerOutputs.columns());
-
-		// Update activations locally
-
-		Matrix m1 = nextLayerWeights.transpose().multiplyByItsTranspose().multiply(beta);
-		Matrix m2 = Matrix.identity(m1.rows()).multiply(beta);
-		Matrix av = m1.add(m2).withInverter(InverterFactory.SMART).inverse();
-
-		Matrix m3 = nextLayerWeights.transpose().multiply(nextLayerOutputs).multiply(beta);
-		Matrix m4 = outputs.transform(new NNOperations.RELU()).multiply(beta);
-		Matrix af = m3.add(m4);
-
-		activations = (Basic2DMatrix) av.multiply(af);
-
-		// Update outputs
-		Matrix m = layerWeights.multiply(previousActivations);
-		Matrix sol1 = activations.multiply(gamma).add(m.multiply(beta)).divide(gamma+beta);
-		Matrix sol2 = m;
-		Matrix z1 = sol1.transform(new NNOperations.PositiveElements());
-		Matrix z2 = sol2.transform(new NNOperations.NegativeElements());
-
-		Matrix fz1 = activations.subtract(z1.transform(new NNOperations.RELU())).multiply(gamma);
-		fz1 = fz1.add(z1.subtract(m).transform(new NNOperations.Square()).multiply(beta));
-		fz1 = fz1.transform(new NNOperations.Square());
-
-		Matrix fz2 = activations.subtract(z2.transform(new NNOperations.RELU())).multiply(gamma);
-		fz2 = fz2.add(z2.subtract(m).transform(new NNOperations.Square()).multiply(beta));
-		fz2 = fz2.transform(new NNOperations.Square());
-
-		outputs = (Basic2DMatrix) fz1.subtract(fz2).transform(new NNOperations.NegativeElements()).add(fz2);
+		if(parentRef != null) {
+			this.activatedInput = NNOperations.applyActivation(input, activation);
+		}
+		else {
+			this.activatedInput = input;
+		}
 		
-		// Move to next layer
-		master.tell(new WorkerRegionEvent.UpdateTable(nodeHost, 1), self());
-		childRef.tell(new NNOperationTypes.UpdateWeightParam(activations.toCSV()), self());
+		System.out.println("Activated Input: " + this.activatedInput);
+		System.out.println("Layer weights: " + layerWeights.rows() + "*" + layerWeights.columns());
+		Vector output = layerWeights.multiply(this.activatedInput);
+		
+		if(childRef != null) {
+			childRef.tell(new NNOperationTypes.AdmmPredict(output, label), getSelf());
+		}
+		else {
+			Vector activatedOutput = NNOperations.applyActivation(output, activation);
+
+			// Compare actual and predicted label
+			DataShard.testPointCount++;
+			if(getOuputIndex(label) == getOuputIndex(activatedOutput)) {
+				DataShard.accuracy += 1;
+			}
+			if(DataShard.testPointCount == DataShard.testSetPart.size()) {
+				DataShard.accuracy = (DataShard.accuracy / DataShard.testPointCount) * 100;
+				System.out.println("Accuracy of this test set part [ADMM]: " + DataShard.accuracy);
+			}
+			System.out.println("Done!");			
+		}
 	}
 
 	public int getOuputIndex(Vector x) {
