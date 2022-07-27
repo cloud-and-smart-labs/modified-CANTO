@@ -18,25 +18,19 @@ public interface NNOperationTypes {
 	class DoneEpoch implements NNOperationTypes, Serializable {}
 
 	class UpdateWeightParam implements NNOperationTypes, Serializable {
-		public Matrix param1;
-		public Matrix param2;
-		public Basic2DMatrix activations;
+		public String param1;
+		public String param2;
+		public String activations;
 		public UpdateWeightParam(){}
-		public UpdateWeightParam(Basic2DMatrix activations){
+		public UpdateWeightParam(String activations){
 			this.activations = activations;
 		}
 	}
 
 	class GetWeights implements NNOperationTypes, Serializable {
-		public Basic2DMatrix weights;
-		public Basic2DMatrix outputs;
+		public String weights;
+		public String outputs;
 		public GetWeights(){}
-	}
-
-	class SetLabels implements NNOperationTypes, Serializable {
-		public Basic2DMatrix labels;
-		public Basic2DMatrix outputs;
-		public SetLabels(){}
 	}
 	
 	class Gradient implements NNOperationTypes, Serializable {

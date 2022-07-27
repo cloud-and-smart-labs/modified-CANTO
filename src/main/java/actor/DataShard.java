@@ -114,6 +114,7 @@ public class DataShard extends AbstractActor {
 			this.labels = (Basic2DMatrix) this.labels.insertRow(0, y);
 		}
 		this.input = (Basic2DMatrix) this.input.removeLastRow();
+		this.input = (Basic2DMatrix) this.input.transpose();
 		this.labels = (Basic2DMatrix) this.labels.removeLastRow();
 
 		dsIter = dataSetPart.iterator();
@@ -163,9 +164,9 @@ public class DataShard extends AbstractActor {
 		}
 	//	System.out.println("Current weights retrieved successfully.");
 		if(!msg.isTest) {
-			if (optimizer == "sgd")
+			if ("sgd".equals(optimizer))
 				getSelf().tell(new NNOperationTypes.DoneUpdatingWeights(), getSelf());
-			else if (optimizer == "admm")
+			else if ("admm".equals(optimizer))
 				getSelf().tell(new NNOperationTypes.DoneEpoch(), getSelf());
 		}
 	}
@@ -209,7 +210,7 @@ public class DataShard extends AbstractActor {
 
 	public void startADMMTraining(NNOperationTypes.DoneEpoch req) {
 		if (++this.epochCount <= epochs) {
-			layerRefs.get(0).tell(new NNOperationTypes.UpdateWeightParam(input), self());
+			layerRefs.get(0).tell(new NNOperationTypes.UpdateWeightParam(input.toCSV()), self());
 		}
 		else {
 			NNMaster.routeeReturns++;

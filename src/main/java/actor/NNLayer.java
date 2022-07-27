@@ -78,15 +78,17 @@ public class NNLayer extends AbstractActor {
 		Timeout timeout = Timeout.create(Duration.ofSeconds(3));
 		Future<Object> future = Patterns.ask(psShardRef, paramReq, timeout);
 		String result = (String) Await.result(future, timeout.duration());
+		System.out.println(result);
 		if(result.length() > 0) {
 			layerWeights = (Basic2DMatrix) Matrix.fromCSV(result);	
 			sender().tell(new NNOperationTypes.ParameterResponse(), self());
+			System.out.println("weightsRequest completed in NNLayer!");
 		}
 	}
 
 	public void getWeights(NNOperationTypes.GetWeights req) throws TimeoutException, InterruptedException {
-		req.weights = layerWeights;
-		req.outputs = outputs;
+		req.weights = layerWeights.toCSV();
+		req.outputs = outputs.toCSV();
 		sender().tell(req, self());
 	}
 
@@ -96,24 +98,31 @@ public class NNLayer extends AbstractActor {
 		nodeHost = getContext().provider().getDefaultAddress().getHost().get();
 		master.tell(new WorkerRegionEvent.UpdateTable(nodeHost, 1), self());
 
+		// Pre process
+		Basic2DMatrix previousActivations = (Basic2DMatrix) Matrix.fromCSV(req.activations);
+
 		// Define hyperparameters
 		double gamma = 5.0;
 		double beta = 5.0;
 
 		// Compute the two params
-		req.param1 = outputs.multiply(req.activations.transpose());
-		req.param2 = req.activations.multiplyByItsTranspose();
+		System.out.println("al-1: " + previousActivations.rows() + "*" + previousActivations.columns());
+		System.out.println("zl: " + outputs.rows() + "*" + outputs.columns());
+		
+		req.param1 = outputs.multiply(previousActivations.transpose()).toCSV();
+		req.param2 = previousActivations.multiplyByItsTranspose().toCSV();
 
 		// Update and request weights for the current layer
 		// psShardRef.tell(req, getSelf());
 		Timeout timeout = Timeout.create(Duration.ofSeconds(3));
 		Future<Object> future = Patterns.ask(psShardRef, req, timeout);
-		layerWeights = (Basic2DMatrix) Await.result(future, timeout.duration());
+		String result = (String) Await.result(future, timeout.duration());
+		layerWeights = (Basic2DMatrix) Matrix.fromCSV(result);
 
 		// Handle Last layer seperately
 		if (childRef == null) {
 			// Update output of last layer
-			Matrix m = layerWeights.multiply(req.activations);
+			Matrix m = layerWeights.multiply(previousActivations);
 			outputs = (Basic2DMatrix) labels.add(m.multiply(beta).subtract(lambda)).divide(beta+1);
 			// Update lambda
 			lambda = (Basic2DMatrix) lambda.add(outputs.subtract(m).multiply(beta));
@@ -125,8 +134,8 @@ public class NNLayer extends AbstractActor {
 		// Get weights and outputs of next layer
 		future = Patterns.ask(childRef, new NNOperationTypes.GetWeights(), timeout);
 		NNOperationTypes.GetWeights nextLayerParams = (NNOperationTypes.GetWeights) Await.result(future, timeout.duration());
-		Basic2DMatrix nextLayerWeights = nextLayerParams.weights;
-		Basic2DMatrix nextLayerOutputs = nextLayerParams.outputs;
+		Basic2DMatrix nextLayerWeights = (Basic2DMatrix) Matrix.fromCSV(nextLayerParams.weights);
+		Basic2DMatrix nextLayerOutputs = (Basic2DMatrix) Matrix.fromCSV(nextLayerParams.outputs);
 
 		// Update activations locally
 
@@ -141,7 +150,7 @@ public class NNLayer extends AbstractActor {
 		activations = (Basic2DMatrix) av.multiply(af);
 
 		// Update outputs
-		Matrix m = layerWeights.multiply(req.activations);
+		Matrix m = layerWeights.multiply(previousActivations);
 		Matrix sol1 = activations.multiply(gamma).add(m.multiply(beta)).divide(gamma+beta);
 		Matrix sol2 = m;
 		Matrix z1 = sol1.transform(new NNOperations.PositiveElements());
@@ -159,7 +168,7 @@ public class NNLayer extends AbstractActor {
 		
 		// Move to next layer
 		master.tell(new WorkerRegionEvent.UpdateTable(nodeHost, 1), self());
-		childRef.tell(new NNOperationTypes.UpdateWeightParam(activations), self());
+		childRef.tell(new NNOperationTypes.UpdateWeightParam(activations.toCSV()), self());
 	}
 
 	public int getOuputIndex(Vector x) {

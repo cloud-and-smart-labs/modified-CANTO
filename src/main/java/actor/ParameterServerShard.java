@@ -56,6 +56,7 @@ public class ParameterServerShard extends AbstractActor implements Serializable 
 		System.out.println("getLatestParams");
 //		System.out.println("Lastest weights are: " + this.weights);
 		sender().tell(this.weights.toCSV(), getSelf());
+		System.out.println("sent latest params");
 	}
 	
 	public void updateWeights(NNOperationTypes.Gradient g) {
@@ -65,8 +66,8 @@ public class ParameterServerShard extends AbstractActor implements Serializable 
 	}
 
 	public void updateWeightsAdmm(NNOperationTypes.UpdateWeightParam req) {
-		params1Sum = params1Sum.add(req.param1);
-		params2Sum = params2Sum.add(req.param2);
+		params1Sum = params1Sum.add(Matrix.fromCSV(req.param1));
+		params2Sum = params2Sum.add(Matrix.fromCSV(req.param2));
 		dsRefs.add(sender());
 		counterAdmm++;
 		if (counterAdmm == numberOfDataShards) {
@@ -74,7 +75,7 @@ public class ParameterServerShard extends AbstractActor implements Serializable 
 			weights = params1Sum.multiply(params2Sum.withInverter(InverterFactory.SMART).inverse());
 			
 			for (ActorRef dsRef : dsRefs) {
-				dsRef.tell(weights, self());
+				dsRef.tell(weights.toCSV(), self());
 			}
 
 			params1Sum = Matrix.zero(weights.rows(), weights.columns());
