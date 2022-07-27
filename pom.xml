@@ -4,22 +4,15 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
   <modelVersion>4.0.0</modelVersion>
-  <artifactId>akka-sample-cluster-java</artifactId>
-  <groupId>com.lightbend.akka.samples</groupId>
-  <name>Akka Cluster in Java</name>
-  <version>empty</version>
+  <artifactId>canto</artifactId>
+  <groupId>com.canto</groupId>
+  <name>CANTO framework</name>
+  <version>1</version>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <akka.version>2.6.19</akka.version>
   </properties>
-
-  <!-- <repositories>
-    <repository>
-        <id>neuroph.sourceforge.net</id>
-        <url>http://neuroph.sourceforge.net/maven2/</url>
-    </repository>
-  </repositories> -->
 
   <dependencies>
     <dependency>
