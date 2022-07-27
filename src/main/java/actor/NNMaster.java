@@ -111,7 +111,7 @@ public class NNMaster extends AbstractActor {
 			System.out.println("Datashard " + c + " init!");
 		//	System.out.println("Split data: " + splitTestSets.get(j) + "\n" + splitDataSets.get(j));
 		//	System.out.println("&&&&&&&&&&&: " + workProcessorRouter.path());
-			Future<Object> future = Patterns.ask(workProcessorRouter, new NNOperationTypes.DataShardParams(c, nnmsg.getLayerDimensions(), new ArrayList<DataSetRow> (splitDataSets.get(j)), new ArrayList<DataSetRow> (splitTestSets.get(j)), nnmsg.getActivation(), lastLayerNeurons, nnmsg.getNumOfEpoch(), splitDataSets.size(), psRefs), timeout);
+			Future<Object> future = Patterns.ask(workProcessorRouter, new NNOperationTypes.DataShardParams(c, nnmsg.getLayerDimensions(), new ArrayList<DataSetRow> (splitDataSets.get(j)), new ArrayList<DataSetRow> (splitTestSets.get(j)), nnmsg.getActivation(), lastLayerNeurons, nnmsg.getOptimizer(), nnmsg.getNumOfEpoch(), splitDataSets.size(), psRefs), timeout);
 			String result = (String) Await.result(future, timeout.duration());
 			System.out.println("The results##########: " + result);
 			if(!result.equals("success")) {

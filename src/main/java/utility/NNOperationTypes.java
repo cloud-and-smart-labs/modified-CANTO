@@ -98,8 +98,9 @@ public interface NNOperationTypes {
 		public int lastLayerNeurons;
 		public int epochs;
 		public int routee_num;
+		public String optimizer;
 		
-		public DataShardParams(int d_id, ArrayList<Integer> layerDimensions, ArrayList<DataSetRow> dataSetPart, ArrayList<DataSetRow> testSetPart, TransferFunction activation, int lastLayerNeurons, int epochs, int routee_num, ArrayList<ActorRef> parameterShardRefs) {
+		public DataShardParams(int d_id, ArrayList<Integer> layerDimensions, ArrayList<DataSetRow> dataSetPart, ArrayList<DataSetRow> testSetPart, TransferFunction activation, int lastLayerNeurons, String optimizer, int epochs, int routee_num, ArrayList<ActorRef> parameterShardRefs) {
 			this.d_id = d_id;
 			this.dataSetPart = dataSetPart;
 			this.testSetPart = testSetPart;
@@ -109,6 +110,7 @@ public interface NNOperationTypes {
 			this.epochs = epochs;
 			this.routee_num = routee_num;
 			this.layerDimensions = layerDimensions;
+			this.optimizer = optimizer;
 		}
 	}
 	

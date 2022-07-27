@@ -63,6 +63,8 @@ public class MainMaster {
 //		system.scheduler().scheduleOnce(interval, master, new NNJobMessage("XOR_task1", trainingSet, 4, sigmoid, layerDimensions, 0.1), system.dispatcher(), null);
 
 		// Forest fire dataset: http://www3.dsi.uminho.pt/pcortez/forestfires/
-		system.scheduler().scheduleOnce(interval, master, new NNJobMessage("iris_task", trainingSet, testSet, 75, 75, rl, layerDimensions, 0.1, 1), system.dispatcher(), null);
+		// system.scheduler().scheduleOnce(interval, master, new NNJobMessage("iris_task", trainingSet, testSet, 75, 75, rl, layerDimensions, "sgd", 0.1, 1), system.dispatcher(), null);
+		
+		system.scheduler().scheduleOnce(interval, master, new NNJobMessage("iris_task", trainingSet, testSet, 75, 75, rl, layerDimensions, "admm", 1), system.dispatcher(), null);
 	}
 }

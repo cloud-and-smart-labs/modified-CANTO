@@ -49,6 +49,7 @@ public class DataShard extends AbstractActor {
 	private Basic2DMatrix lambda;
 	private Basic2DMatrix input;
 	private Basic2DMatrix labels;
+	private String optimizer;
 
 	public DataShard() {
 		master = getContext().actorSelection("akka://MasterSystem@127.0.0.1:2550/user/master");
@@ -92,6 +93,7 @@ public class DataShard extends AbstractActor {
 		this.epochs = dsParams.epochs;
 		this.routee_num = dsParams.routee_num;
 		this.layerDimensions = dsParams.layerDimensions;
+		this.optimizer = dsParams.optimizer;
 		this.lambda = Basic2DMatrix.unit(lastLayerNeurons, dataSetPart.size());
 		
 		// Build input and labels
@@ -150,8 +152,12 @@ public class DataShard extends AbstractActor {
 			}	
 		}
 	//	System.out.println("Current weights retrieved successfully.");
-		if(!msg.isTest) 
-			getSelf().tell(new NNOperationTypes.DoneUpdatingWeights(), getSelf());
+		if(!msg.isTest) {
+			if (optimizer == "sgd")
+				getSelf().tell(new NNOperationTypes.DoneUpdatingWeights(), getSelf());
+			else if (optimizer == "admm")
+				getSelf().tell(new NNOperationTypes.DoneEpoch(), getSelf());
+		}
 	}
 	
 	// Once weights are updated, then forwardProp is initiated

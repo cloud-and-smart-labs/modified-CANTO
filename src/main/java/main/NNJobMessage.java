@@ -16,8 +16,9 @@ public class NNJobMessage implements Serializable {
     private double learningRate;
     private TransferFunction activation;
 	private int epochs;    
+	private String optimizer;    
     
-    public NNJobMessage(String payload, DataSet dataset, DataSet testSet, int dataPerReplica, int testDataPerReplica, TransferFunction activation, ArrayList<Integer> layerDimensions, double learningRate, int epochs) {
+    public NNJobMessage(String payload, DataSet dataset, DataSet testSet, int dataPerReplica, int testDataPerReplica, TransferFunction activation, ArrayList<Integer> layerDimensions, String optimizer, double learningRate, int epochs) {
     	this.payload = payload;
         this.dataset = dataset;
         this.dataPerReplica = dataPerReplica;
@@ -27,7 +28,21 @@ public class NNJobMessage implements Serializable {
         this.learningRate = learningRate;
 		this.testSet = testSet;
 		this.epochs = epochs;
+		this.optimizer = optimizer;
     }
+
+	public NNJobMessage(String payload, DataSet dataset, DataSet testSet, int dataPerReplica, int testDataPerReplica, TransferFunction activation, ArrayList<Integer> layerDimensions, String optimizer, int epochs) {
+    	this.payload = payload;
+        this.dataset = dataset;
+        this.dataPerReplica = dataPerReplica;
+		this.testDataPerReplica = testDataPerReplica;
+        this.activation = activation;
+        this.layerDimensions = layerDimensions;
+		this.testSet = testSet;
+		this.epochs = epochs;
+		this.optimizer = optimizer;
+    }
+
 	public int getTestPerReplica() {
 		return testDataPerReplica;
 	}
@@ -62,5 +77,9 @@ public class NNJobMessage implements Serializable {
 
 	public DataSet getDataset() {
     	return dataset;
+    }
+
+	public String getOptimizer() {
+    	return optimizer;
     }
 }
