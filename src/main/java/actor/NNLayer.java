@@ -108,6 +108,7 @@ public class NNLayer extends AbstractActor {
 		// Compute the two params
 		System.out.println("al-1: " + previousActivations.rows() + "*" + previousActivations.columns());
 		System.out.println("zl: " + outputs.rows() + "*" + outputs.columns());
+		System.out.println("wl: " + layerWeights.rows() + "*" + layerWeights.columns());
 		
 		req.param1 = outputs.multiply(previousActivations.transpose()).toCSV();
 		req.param2 = previousActivations.multiplyByItsTranspose().toCSV();
@@ -136,6 +137,9 @@ public class NNLayer extends AbstractActor {
 		NNOperationTypes.GetWeights nextLayerParams = (NNOperationTypes.GetWeights) Await.result(future, timeout.duration());
 		Basic2DMatrix nextLayerWeights = (Basic2DMatrix) Matrix.fromCSV(nextLayerParams.weights);
 		Basic2DMatrix nextLayerOutputs = (Basic2DMatrix) Matrix.fromCSV(nextLayerParams.outputs);
+		
+		System.out.println("wl+1: " + nextLayerWeights.rows() + "*" + nextLayerWeights.columns());
+		System.out.println("zl+1: " + nextLayerOutputs.rows() + "*" + nextLayerOutputs.columns());
 
 		// Update activations locally
 

@@ -30,7 +30,7 @@ public class ParameterServerShard extends AbstractActor implements Serializable 
 		this.numberOfDataShards = numberOfDataShards;
 		this.dsRefs = new ArrayList<ActorRef>();
 		this.params1Sum = Matrix.zero(weights.rows(), weights.columns());
-		this.params2Sum = Matrix.zero(weights.rows(), weights.columns());
+		this.params2Sum = Matrix.zero(weights.columns(), weights.columns());
 	}
 
 	@Override
@@ -66,6 +66,10 @@ public class ParameterServerShard extends AbstractActor implements Serializable 
 	}
 
 	public void updateWeightsAdmm(NNOperationTypes.UpdateWeightParam req) {
+		System.out.println("Sender: " + sender());
+		System.out.println("param1: " + Matrix.fromCSV(req.param1).rows() + "*" + Matrix.fromCSV(req.param1).columns());
+		System.out.println("param2: " + Matrix.fromCSV(req.param2).rows() + "*" + Matrix.fromCSV(req.param2).columns());
+
 		params1Sum = params1Sum.add(Matrix.fromCSV(req.param1));
 		params2Sum = params2Sum.add(Matrix.fromCSV(req.param2));
 		dsRefs.add(sender());

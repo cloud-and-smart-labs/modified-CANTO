@@ -116,6 +116,7 @@ public class DataShard extends AbstractActor {
 		this.input = (Basic2DMatrix) this.input.removeLastRow();
 		this.input = (Basic2DMatrix) this.input.transpose();
 		this.labels = (Basic2DMatrix) this.labels.removeLastRow();
+		this.labels = (Basic2DMatrix) this.labels.transpose();
 
 		dsIter = dataSetPart.iterator();
 		createLayerActors();		
@@ -133,14 +134,14 @@ public class DataShard extends AbstractActor {
 		int n = this.parameterShardRefs.size();
 		layerRefs = new ArrayList<ActorRef>();
 		
-		layerRefs.add(getContext().actorOf(Props.create(NNLayer.class, 0, layerDimensions.get(0), dataSetPart.size(), activation, null, null, parameterShardRefs.get(0), null, null), d_id + "layer0"));
+		layerRefs.add(getContext().actorOf(Props.create(NNLayer.class, 0, layerDimensions.get(1), dataSetPart.size(), activation, null, null, parameterShardRefs.get(0), null, null), d_id + "layer0"));
 	
 		for(int i = 1; i < n-1; i++) {
 			System.out.println("Layer: " + i);			
-			layerRefs.add(getContext().actorOf(Props.create(NNLayer.class, i, layerDimensions.get(i), dataSetPart.size(), activation, layerRefs.get(i-1), null, parameterShardRefs.get(i), null, null), d_id + "layer" + i));
+			layerRefs.add(getContext().actorOf(Props.create(NNLayer.class, i, layerDimensions.get(i+1), dataSetPart.size(), activation, layerRefs.get(i-1), null, parameterShardRefs.get(i), null, null), d_id + "layer" + i));
 			//System.out.println("Layer " + i + " parent: " + layerRefs.get(i).path().parent());
 		}
-		layerRefs.add(getContext().actorOf(Props.create(NNLayer.class, n-1, layerDimensions.get(n-1), dataSetPart.size(), activation, layerRefs.get(n-2), null, parameterShardRefs.get(n-1), lambda, labels), d_id + "layer" + (n-1)));
+		layerRefs.add(getContext().actorOf(Props.create(NNLayer.class, n-1, layerDimensions.get(n), dataSetPart.size(), activation, layerRefs.get(n-2), null, parameterShardRefs.get(n-1), lambda, labels), d_id + "layer" + (n-1)));
 		
 		System.out.println("Linking the child actors");
 		for(int i = 0; i < n-1; i++) {
