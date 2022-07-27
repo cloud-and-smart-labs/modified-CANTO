@@ -38,6 +38,7 @@ public class NNJobMessage implements Serializable {
 		this.testDataPerReplica = testDataPerReplica;
         this.activation = activation;
         this.layerDimensions = layerDimensions;
+		this.learningRate = 0;
 		this.testSet = testSet;
 		this.epochs = epochs;
 		this.optimizer = optimizer;

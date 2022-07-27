@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.concurrent.TimeoutException;
 
+import org.la4j.Matrix;
 import org.la4j.Vector;
 import org.la4j.matrix.dense.Basic2DMatrix;
 import org.neuroph.core.data.DataSetRow;
@@ -97,14 +98,23 @@ public class DataShard extends AbstractActor {
 		this.lambda = Basic2DMatrix.unit(lastLayerNeurons, dataSetPart.size());
 		
 		// Build input and labels
+		DataSetRow sampleRow = dataSetPart.get(0);
+		int inputLen = sampleRow.getInput().length;
+		Vector sampleY = Vector.fromArray(sampleRow.getDesiredOutput());
+		int labelLen = NNOperations.oneHotEncoding(sampleY, lastLayerNeurons).length();
+		this.input = (Basic2DMatrix) Matrix.unit(1, inputLen);
+		this.labels = (Basic2DMatrix) Matrix.unit(1, labelLen);
+		
 		for(DataSetRow row: dataSetPart) {
 			Vector x = Vector.fromArray(row.getInput());
 			Vector y = Vector.fromArray(row.getDesiredOutput());
 			y = NNOperations.oneHotEncoding(y, lastLayerNeurons);
-			System.out.println("Data point: " + x + ", output: " + y);
-			this.input.insertRow(0, x);
-			this.labels.insertRow(0, y);
+			// System.out.println("Data point: " + x + ", output: " + y);
+			this.input = (Basic2DMatrix) this.input.insertRow(0, x);
+			this.labels = (Basic2DMatrix) this.labels.insertRow(0, y);
 		}
+		this.input = (Basic2DMatrix) this.input.removeLastRow();
+		this.labels = (Basic2DMatrix) this.labels.removeLastRow();
 
 		dsIter = dataSetPart.iterator();
 		createLayerActors();		
