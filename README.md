@@ -7,8 +7,5 @@ Check out the detailed description [here](https://docs.google.com/document/d/1yD
 # Setup
 
 To run a minimalistic locally working CANTO:
-- `mvn compile`
-Then parallelly (in different shells) run:  
-- `mvn exec:java -Dexec.mainClass="main.Main" -Dexec.args="master 2550"`
-- `mvn exec:java -Dexec.mainClass="main.Main" -Dexec.args="worker 2552"`
-- `mvn exec:java -Dexec.mainClass="main.Main" -Dexec.args="worker 2534"`
+- `./deploy.sh`
+Note: Check logs of containers to view the output

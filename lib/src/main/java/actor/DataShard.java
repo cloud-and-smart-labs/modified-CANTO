@@ -53,7 +53,7 @@ public class DataShard extends AbstractActor {
 	private String optimizer;
 
 	public DataShard() {
-		master = getContext().actorSelection("akka://MasterSystem@127.0.0.1:2550/user/master");
+		master = getContext().actorSelection("akka://MasterSystem@master:2550/user/master");
 		accuracy = 0;
 		testPointCount = 0;
 		epochCount = 0;
@@ -200,7 +200,7 @@ public class DataShard extends AbstractActor {
 			NNMaster.routeeReturns++;
 			if(NNMaster.routeeReturns == routee_num) {
 				// Send trained weights back to master.
-				ActorSelection master = getContext().actorSelection("akka://MasterSystem@127.0.0.1:2550/user/master");
+				ActorSelection master = getContext().actorSelection("akka://MasterSystem@master:2550/user/master");
 				master.tell(new NNOperationTypes.SendWeights(parameterShardRefs), self());
 			}
 			System.out.println("Routee returns so far: " + NNMaster.routeeReturns);
@@ -217,7 +217,7 @@ public class DataShard extends AbstractActor {
 			NNMaster.routeeReturns++;
 			if(NNMaster.routeeReturns == routee_num) {
 				// Send trained weights back to master.
-				ActorSelection master = getContext().actorSelection("akka://MasterSystem@127.0.0.1:2550/user/master");
+				ActorSelection master = getContext().actorSelection("akka://MasterSystem@master:2550/user/master");
 				master.tell(new NNOperationTypes.SendWeights(parameterShardRefs), self());
 			}
 			System.out.println("Routee returns so far: " + NNMaster.routeeReturns);

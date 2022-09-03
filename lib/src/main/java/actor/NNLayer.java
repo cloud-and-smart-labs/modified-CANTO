@@ -53,7 +53,7 @@ public class NNLayer extends AbstractActor {
 		this.outputs =Basic2DMatrix.random(numberOfLayers, numberofRows, new Random());
 		this.lambda = lambda;
 		this.labels = labels;
-		master = getContext().actorSelection("akka://MasterSystem@127.0.0.1:2550/user/master");
+		master = getContext().actorSelection("akka://MasterSystem@master:2550/user/master");
 	}
 	
 	public void setChildRef(ActorRef childRef) {

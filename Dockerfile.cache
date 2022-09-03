@@ -1,0 +1,10 @@
+# Cache dependencies as "canto-base" image
+FROM gradle:7.1.0-jdk11 AS CACHE
+ENV APP_HOME=/usr/app/
+WORKDIR $APP_HOME
+ENV GRADLE_USER_HOME /cache
+COPY . .
+RUN gradle --no-daemon --stacktrace build
+
+FROM gradle:7.1.0-jdk11
+COPY --from=CACHE /cache /home/gradle/.gradle

@@ -28,7 +28,7 @@ public class WorkerRegion extends AbstractActor{
 	
 	 public WorkerRegion(String regionId) {
         this.regionId = regionId;
-        master = getContext().actorSelection("akka://MasterSystem@127.0.0.1:2550/user/master");
+        master = getContext().actorSelection("akka://MasterSystem@master:2550/user/master");
         ActorSystem system = getContext().getSystem();
         ClusterShardingSettings settings = ClusterShardingSettings.create(system);
         

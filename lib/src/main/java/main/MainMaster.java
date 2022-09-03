@@ -41,8 +41,8 @@ public class MainMaster {
         Timeout timeout = new Timeout(Duration.create(15, TimeUnit.SECONDS));
         ExecutionContext ec = system.dispatcher();
         
-        DataSet trainingSet = DataSet.createFromFile("datasets/iris_train.csv", 4, 1, ",");
-		DataSet testSet = DataSet.createFromFile("datasets/iris_test.csv", 4, 1, ",");
+        DataSet trainingSet = DataSet.createFromFile("/root/datasets/iris_train.csv", 4, 1, ",");
+		DataSet testSet = DataSet.createFromFile("/root/datasets/iris_test.csv", 4, 1, ",");
 
 		System.out.println("Dataset inited: " + trainingSet.size());
 		System.out.println("Dataset inited: " + testSet.size());
@@ -65,6 +65,6 @@ public class MainMaster {
 		// Forest fire dataset: http://www3.dsi.uminho.pt/pcortez/forestfires/
 		system.scheduler().scheduleOnce(interval, master, new NNJobMessage("iris_task", trainingSet, testSet, 75, 75, rl, layerDimensions, "sgd", 0.1, 1), system.dispatcher(), null);
 		
-		system.scheduler().scheduleOnce(interval, master, new NNJobMessage("iris_task", trainingSet, testSet, 75, 75, rl, layerDimensions, "admm", 1), system.dispatcher(), null);
+		// system.scheduler().scheduleOnce(interval, master, new NNJobMessage("iris_task", trainingSet, testSet, 75, 75, rl, layerDimensions, "admm", 1), system.dispatcher(), null);
 	}
 }

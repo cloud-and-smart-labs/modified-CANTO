@@ -1,0 +1,71 @@
+version: "3.3"
+services:
+  master:
+    image: canto
+    ports:
+      - "2550:2550"
+    volumes:
+      - ./lib/datasets/:/root/datasets/
+    environment:
+      CLUSTER_PORT: 2550
+      CLUSTER_IP: master
+      SEED1_IP: worker1
+      SEED2_IP: worker2
+      ROLE: master
+
+    deploy:
+      replicas: 1
+      # placement:
+      #   constraints: [node.hostname == pop]
+    command: ["java", "-jar", "/app.jar", "master", "2550"]
+
+  worker1:
+    image: canto
+    ports:
+      - "2552:2552"
+    environment:
+      CLUSTER_PORT: 2552
+      CLUSTER_IP: worker1
+      SEED1_IP: worker1
+      SEED2_IP: worker2
+      ROLE: worker
+
+    deploy:
+      replicas: 1
+      # placement:
+      #   constraints: [node.hostname == raspi1]
+    command: ["java", "-jar", "/app.jar", "worker", "2552"]
+
+  worker2:
+    image: canto
+    ports:
+      - "2534:2534"
+    environment:
+      CLUSTER_PORT: 2534
+      CLUSTER_IP: worker2
+      SEED1_IP: worker1
+      SEED2_IP: worker2
+      ROLE: worker
+
+    deploy:
+      replicas: 1
+      # placement:
+      #   constraints: [node.hostname == raspi3]
+    command: ["java", "-jar", "/app.jar", "worker", "2534"]
+
+  worker3:
+    image: canto
+    ports:
+      - "2553:2553"
+    environment:
+      CLUSTER_PORT: 2553
+      CLUSTER_IP: worker3
+      SEED1_IP: worker1
+      SEED2_IP: worker2
+      ROLE: worker
+
+    deploy:
+      replicas: 1
+      # placement:
+      #   constraints: [node.hostname == raspi4]
+    command: ["java", "-jar", "/app.jar", "worker", "2553"]

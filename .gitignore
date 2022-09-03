@@ -2,7 +2,6 @@
 .vscode
 notes.md
 .idea
-target/
-Dockerfile
-docker-compose.yml
-deploy.sh
+.gradle
+build
+lib/build
