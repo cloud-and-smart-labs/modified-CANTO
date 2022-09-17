@@ -46,21 +46,21 @@ public class ParameterServerShard extends AbstractActor implements Serializable 
 	
 	// Just for testing framework correctness
 	public void setWeights(String s) {
-		System.out.println("setWeights");
+	//	System.out.println("setWeights");
 		this.weights = Matrix.fromCSV(s);
 		System.out.println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ " + weights);
 		sender().tell("success", self());
 	}
 
 	public void getLatestParameters(NNOperationTypes.ParameterRequest paramReq) {
-		System.out.println("getLatestParams");
+	//	System.out.println("getLatestParams");
 //		System.out.println("Lastest weights are: " + this.weights);
 		sender().tell(this.weights.toCSV(), getSelf());
-		System.out.println("sent latest params");
+	//	System.out.println("sent latest params");
 	}
 	
 	public void updateWeights(NNOperationTypes.Gradient g) {
-		System.out.println("updateWeights");
+	//	System.out.println("updateWeights");
 		Basic2DMatrix grad = Basic2DMatrix.fromCSV(g.getGradient());
 		weights = regularize(weights.add(grad.multiply(learningRate)));
 	}
