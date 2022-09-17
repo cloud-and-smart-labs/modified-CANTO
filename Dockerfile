@@ -6,7 +6,7 @@ COPY . .
 RUN gradle --no-daemon --stacktrace shadowJar
 
 # Actual container
-FROM openjdk:11
+FROM arm32v7/openjdk
 ENV APP_HOME=/usr/app
 ENV ARTIFACT_NAME=lib-deploy.jar
 COPY --from=BUILD_IMAGE $APP_HOME/lib/build/libs/$ARTIFACT_NAME app.jar
