@@ -24,7 +24,9 @@ public class Master extends AbstractActor{
     private final TableHandler tableHandler;
     private ArrayList<ActorRef> trainedWeights;
     private HashMap<String, ActorRef> nodetoRef = new HashMap<String, ActorRef>();
-    
+    private long startTime;
+    private long endTime;
+
     public static Props props() {
         return Props.create(Master.class);
     }
@@ -54,6 +56,9 @@ public class Master extends AbstractActor{
 	}
 	
     private void getTrainedWeights(NNOperationTypes.SendWeights ps)  {
+        endTime = System.currentTimeMillis();
+        System.out.print("Time taken by CANTO: ");
+        System.out.println(endTime - startTime);
         System.out.println("Master received trained weights");
         this.trainedWeights = ps.trainedWs;
     }
@@ -118,6 +123,7 @@ public class Master extends AbstractActor{
             System.out.println(tableHandler.getMinJobsRegion());
         
             NNJobMessage nextMessage = jobQueue.nextSensorData();
+            startTime = System.currentTimeMillis();
             workerRegion.tell(nextMessage, self());            
         }
 	 }	

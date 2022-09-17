@@ -79,11 +79,11 @@ public class NNLayer extends AbstractActor {
 		Timeout timeout = Timeout.create(Duration.ofSeconds(3));
 		Future<Object> future = Patterns.ask(psShardRef, paramReq, timeout);
 		String result = (String) Await.result(future, timeout.duration());
-		System.out.println(result);
+		//System.out.println(result);
 		if(result.length() > 0) {
 			layerWeights = (Basic2DMatrix) Matrix.fromCSV(result);	
 			sender().tell(new NNOperationTypes.ParameterResponse(), self());
-			System.out.println("weightsRequest completed in NNLayer!");
+		//	System.out.println("weightsRequest completed in NNLayer!");
 		}
 	}
 
