@@ -41,17 +41,17 @@ public class MainMaster {
         Timeout timeout = new Timeout(Duration.create(15, TimeUnit.SECONDS));
         ExecutionContext ec = system.dispatcher();
         
-        // DataSet trainingSet = DataSet.createFromFile("/root/datasets/winequality_train.csv", 11, 1, ",");
-		// DataSet testSet = DataSet.createFromFile("/root/datasets/winequality_test.csv", 11, 1, ",");
+        DataSet trainingSet = DataSet.createFromFile("/root/datasets/winequality_train.csv", 11, 1, ",");
+		DataSet testSet = DataSet.createFromFile("/root/datasets/winequality_test.csv", 11, 1, ",");
 
-		DataSet trainingSet = DataSet.createFromFile("/root/datasets/iris_train.csv", 4, 1, ",");
-		DataSet testSet = DataSet.createFromFile("/root/datasets/iris_test.csv", 4, 1, ",");
+		// DataSet trainingSet = DataSet.createFromFile("/root/datasets/iris_train.csv", 4, 1, ",");
+		// DataSet testSet = DataSet.createFromFile("/root/datasets/iris_test.csv", 4, 1, ",");
 
 		System.out.println("Dataset inited: " + trainingSet.size());
 		System.out.println("Dataset inited: " + testSet.size());
         
-		ArrayList<Integer> layerDimensions = new ArrayList<>(List.of(4, 4, 4, 3));
-		// ArrayList<Integer> layerDimensions = new ArrayList<>(List.of(11, 32, 16, 11));
+		// ArrayList<Integer> layerDimensions = new ArrayList<>(List.of(4, 4, 4, 3));
+		ArrayList<Integer> layerDimensions = new ArrayList<>(List.of(11, 32, 16, 11));
 		// Sigmoid sigmoid = new Sigmoid();		
 		RectifiedLinear rl  = new RectifiedLinear();
 
