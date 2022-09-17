@@ -256,6 +256,8 @@ public class NNLayer extends AbstractActor {
 			if (forwardParams.isTestData) {
 				// Compare actual and predicted label
 				DataShard.testPointCount++;
+				System.out.println("Actual: " + getOuputIndex(target));
+				System.out.println("Predicted: " + getOuputIndex(activatedOutputs));
 				if(getOuputIndex(target) == getOuputIndex(activatedOutputs)) {
 	//				System.out.println("Correct prediction");
 					DataShard.accuracy += 1;

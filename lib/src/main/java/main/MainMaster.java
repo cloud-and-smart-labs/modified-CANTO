@@ -41,13 +41,17 @@ public class MainMaster {
         Timeout timeout = new Timeout(Duration.create(15, TimeUnit.SECONDS));
         ExecutionContext ec = system.dispatcher();
         
-        DataSet trainingSet = DataSet.createFromFile("/root/datasets/iris_train.csv", 4, 1, ",");
+        // DataSet trainingSet = DataSet.createFromFile("/root/datasets/winequality_train.csv", 11, 1, ",");
+		// DataSet testSet = DataSet.createFromFile("/root/datasets/winequality_test.csv", 11, 1, ",");
+
+		DataSet trainingSet = DataSet.createFromFile("/root/datasets/iris_train.csv", 4, 1, ",");
 		DataSet testSet = DataSet.createFromFile("/root/datasets/iris_test.csv", 4, 1, ",");
 
 		System.out.println("Dataset inited: " + trainingSet.size());
 		System.out.println("Dataset inited: " + testSet.size());
         
 		ArrayList<Integer> layerDimensions = new ArrayList<>(List.of(4, 4, 4, 3));
+		// ArrayList<Integer> layerDimensions = new ArrayList<>(List.of(11, 32, 16, 11));
 		// Sigmoid sigmoid = new Sigmoid();		
 		RectifiedLinear rl  = new RectifiedLinear();
 
@@ -63,7 +67,8 @@ public class MainMaster {
 //		system.scheduler().scheduleOnce(interval, master, new NNJobMessage("XOR_task1", trainingSet, 4, sigmoid, layerDimensions, 0.1), system.dispatcher(), null);
 
 		// Forest fire dataset: http://www3.dsi.uminho.pt/pcortez/forestfires/
-		system.scheduler().scheduleOnce(interval, master, new NNJobMessage("iris_task", trainingSet, testSet, 75, 75, rl, layerDimensions, "sgd", 0.1, 1), system.dispatcher(), null);
+		system.scheduler().scheduleOnce(interval, master, new NNJobMessage("winequality_task", trainingSet, testSet, 3918, 980, rl, layerDimensions, "sgd", 0.3, 10), system.dispatcher(), null);
+		// system.scheduler().scheduleOnce(interval, master, new NNJobMessage("iris_task", trainingSet, testSet, 75, 75, rl, layerDimensions, "sgd", 0.3, 300), system.dispatcher(), null);
 		
 		// system.scheduler().scheduleOnce(interval, master, new NNJobMessage("iris_task", trainingSet, testSet, 75, 75, rl, layerDimensions, "admm", 1), system.dispatcher(), null);
 	}
